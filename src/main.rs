@@ -1332,9 +1332,9 @@ async fn main() {
             }
             "Information about the Application\n" => {
                 println!("{}\n","1) An Easy-to-Use CLI Interface Application for Interacting with AWS IAM Service".bright_green().bold());
-                println!("{}\n","2) If you find this description unclear, please click here https://tinyurl.com/35f44wzs to learn about supported IAM operations".bright_green().bold());
+                println!("{}\n","2) If you find this description unclear, please click here https://tinyurl.com/yx5kkssr to learn about supported IAM operations".bright_green().bold());
                 println!("{}\n","3) This application is written in Rust and utilizes the Inquire crate to provide real-world software development experience".bright_green().bold());
-                println!("{}\n","4) This application is not a scam or malware designed to steal your credentials. The complete source code is available here https://tinyurl.com/sjtt729f for you to verify its authenticity".bright_green().bold());
+                println!("{}\n","4) This application is not a scam or malware designed to steal your credentials. The complete source code is available here https://github.com/Sanjuvi/aws_iam_client_cli for you to verify its authenticity".bright_green().bold());
                 println!("{}\n","5) If you appreciate this CLI tool or would like to discuss it further, please visit the comments section https://sanjuvi.github.io/Blog/posts/Aws-Iam/".bright_green().bold());
             }
             "Close the application\n" => break 'main,

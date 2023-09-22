@@ -7,7 +7,7 @@ license = "LICENSE"
 description = "A tool for interacting with AWS IAM services"
 readme = "README.md"
 homepage = "https://sanjuvi.github.io/Blog/posts/Aws-Iam/"
-repository = "https://github.com/Sanjuvi/aws_iam_client"
+repository = "https://github.com/Sanjuvi/aws_iam_client_cli"
 keywords = ["cli", "aws-sdk-iam", "iam"]
 categories = ["command-line-utilities"]
 
