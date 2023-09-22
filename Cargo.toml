@@ -1,0 +1,33 @@
+[package]
+name = "aws_iam_client"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sanjeevi <sanjeevimani567@email.com>"]
+license = "LICENSE"
+description = "A tool for interacting with AWS IAM services"
+readme = "README.md"
+homepage = "https://sanjuvi.github.io/Blog/posts/Aws-Iam/"
+repository = "https://github.com/Sanjuvi/aws_iam_client"
+keywords = ["cli", "aws-sdk-iam", "iam"]
+categories = ["command-line-utilities"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio ={ version = "1.32.0",features = ["full"]}
+tokio-stream ="0.1.14"
+aws-config ="0.56.1"
+aws-credential-types ="0.56.1"
+aws-types ="0.56.1"
+aws-sdk-iam ="0.31.0"
+aws-sdk-sts ="0.31.0"
+
+inquire ="0.6.2"
+colored ="2.0.4"
+dotenv ="0.15.0"
+#to decode the policy document to json format
+urldecode = "0.1.1"
+
+genpdf ="0.2.0"
+csv ="1.2.2"
+

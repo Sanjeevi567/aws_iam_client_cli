@@ -1,0 +1,42 @@
+{
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:AddUserToGroup",
+          "iam:AttachGroupPolicy",
+          "iam:AttachUserPolicy",
+          "iam:ChangePassword",
+          "iam:CreateAccessKey",
+          "iam:CreateGroup",
+          "iam:CreateLoginProfile",
+          "iam:CreateUser",
+          "iam:DeleteAccessKey",
+          "iam:DeleteGroup",
+          "iam:DeleteGroupPolicy",
+          "iam:DeleteLoginProfile",
+          "iam:DeleteUserPolicy",
+          "iam:DetachGroupPolicy",
+          "iam:DetachUserPolicy",
+          "iam:GenerateCredentialReport",
+          "iam:GetAccountAuthorizationDetails",
+          "iam:GetAccountSummary",
+          "iam:GetCredentialReport",
+          "iam:GetGroup",
+          "iam:GetUser",
+          "iam:ListAttachedGroupPolicies",
+          "iam:ListAttachedUserPolicies",
+          "iam:ListGroupPolicies",
+          "iam:ListUserPolicies",
+          "iam:ListUsers",
+          "iam:PutGroupPolicy",
+          "iam:PutUserPolicy",
+          "iam:RemoveUserFromGroup",
+          "iam:UpdateAccessKey",
+          "sts:GetCallerIdentity"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  }
