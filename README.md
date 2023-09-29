@@ -42,4 +42,4 @@ An intuitive command-line interface (CLI) for managing IAM operations on AWS
 ### Get Users within a Group
 ### Retrieve the Policy Name and ARN for a Group
 ### Usage:
-### [Documentation and Best Practices](https://sanjuvi.github.io/Blog/posts/Aws-Iam/)
+### [Documentation and How to Get started](https://sanjuvi.github.io/Blog/posts/Aws-Iam/)
