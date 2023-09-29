@@ -38,7 +38,7 @@ async fn main() {
         )
         .with_starting_cursor(0)
         .with_formatter(&|input| format!("The chosen operation is: '{input}'"))
-        .with_page_size(6)
+        .with_page_size(10)
         .with_help_message("Click here https://tinyurl.com/2dv477cn to learn more")
         .prompt()
         .unwrap();
@@ -100,7 +100,7 @@ async fn main() {
                 ];
                 loop {
                     let choices = Select::new("Operations in IAM User\n", user_ops.clone())
-                        .with_page_size(5)
+                        .with_page_size(18)
                         .with_formatter(&|input| format!("The chosen operation is: '{input}'"))
                         .with_starting_cursor(0)
                         .prompt()
@@ -750,7 +750,7 @@ async fn main() {
                 loop {
                     let choices =
                         Select::new("Operations in IAM User Group\n", user_group_ops.clone())
-                            .with_page_size(5)
+                            .with_page_size(17)
                             .with_formatter(&|input| format!("The chosen operation is: {input}"))
                             .with_starting_cursor(0)
                             .prompt()
