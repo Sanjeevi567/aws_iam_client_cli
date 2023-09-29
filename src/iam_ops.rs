@@ -317,19 +317,22 @@ impl IamOps {
             let arn = wrap.arn();
             let path = wrap.path();
             let password_last_used = wrap.password_last_used();
-            if let (Some(uname), Some(id), Some(date), Some(arn), Some(path), Some(pass)) = (
-                user_name,
-                user_id,
-                create_date,
-                arn,
-                path,
-                password_last_used,
-            ) {
+            if let Some(uname) = user_name {
                 println!("IAM User Name: {}", uname.green().bold());
-                println!("IAM User ID: {}", id.green().bold());
+            }
+            if let Some(arn) = arn {
                 println!("Amazon Resource Name(arn): {}", arn.green().bold());
+            }
+            if let Some(id) = user_id {
+                println!("IAM User ID: {}", id.green().bold());
+            }
+            if let Some(date) = create_date {
+                println!("User Creation Date: {}", date.green().bold());
+            }
+            if let Some(path) = path {
                 println!("Path for the IAM User: {}", path.green().bold());
-                println!("Creation Date: {}", date.green().bold());
+            }
+            if let Some(pass) = password_last_used {
                 println!("PassWord Last Used: {}\n\n", pass.green().bold());
             }
         }
@@ -362,19 +365,22 @@ impl IamOps {
             let create_date = wrap_user.create_date();
             let password_last_used = wrap_user.password_last_used();
             let path = wrap_user.path();
-            if let (Some(uname), Some(id), Some(date), Some(arn), Some(path), Some(pass)) = (
-                user_name,
-                user_id,
-                create_date,
-                arn,
-                path,
-                password_last_used,
-            ) {
+            if let Some(uname) = user_name {
                 println!("IAM User Name: {}", uname.green().bold());
-                println!("IAM User ID: {}", id.green().bold());
+            }
+            if let Some(arn) = arn {
                 println!("Amazon Resource Name(arn): {}", arn.green().bold());
+            }
+            if let Some(id) = user_id {
+                println!("IAM User ID: {}", id.green().bold());
+            }
+            if let Some(date) = create_date {
+                println!("User Creation Date: {}", date.green().bold());
+            }
+            if let Some(path) = path {
                 println!("Path for the IAM User: {}", path.green().bold());
-                println!("Creation Date: {}", date.green().bold());
+            }
+            if let Some(pass) = password_last_used {
                 println!("PassWord Last Used: {}\n\n", pass.green().bold());
             }
         });
@@ -399,19 +405,30 @@ impl IamOps {
             let create_date = wrap_user.create_date();
             let password_last_used = wrap_user.password_last_used();
             let path = wrap_user.path();
-            if let (Some(uname), Some(id), Some(date), Some(arn), Some(path), Some(pass)) = (
-                user_name,
-                user_id,
-                create_date,
-                arn,
-                path,
-                password_last_used,
-            ) {
-                let buf = format!("IAM User Name: {}\nIAM User ID: {}\nAmazon Resource Name: {}\nPath for the IAM User: {}\nCreation Date: {}\nPassword Last Used: {}\n",
-               uname,id,arn,path,date,pass
-            );
-            iam_user_names.push(uname.to_string());
-            file.write_all(buf.as_bytes()).unwrap();
+            if let Some(uname) = user_name {
+                let buf = format!("IAM User Name: {}\n", uname);
+                file.write_all(buf.as_bytes()).unwrap();
+                iam_user_names.push(uname.to_string());
+            }
+            if let Some(arn) = arn {
+                let buf = format!("IAM User ID: {}\n", arn);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(id) = user_id {
+                let buf = format!("IAM User ID: {}\n", id);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(date) = create_date {
+                let buf = format!("Creation Date: {}\n", date);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(path) = path {
+                let buf = format!("Path for the IAM User: {}\n", path);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(pass) = password_last_used {
+                let buf = format!("Password Last Used: {}\n\n", pass);
+                file.write_all(buf.as_bytes()).unwrap();
             }
         });
         match File::open("iam_users_details.txt") {
@@ -500,10 +517,10 @@ impl IamOps {
             .await
             .expect("Error while listing attached user policies\n");
         output.iter().take(3).for_each(|attached_policy| {
-            if let (Some(policy_name), Some(policy_arn)) =
-                (attached_policy.policy_name(), attached_policy.policy_arn())
-            {
+            if let Some(policy_name) = attached_policy.policy_name() {
                 println!("Policy Name: {}", policy_name.green().bold());
+            }
+            if let Some(policy_arn) = attached_policy.policy_arn() {
                 println!("Policy ARN: {}\n\n", policy_arn.green().bold());
             }
         });
@@ -521,10 +538,14 @@ impl IamOps {
             .expect("Error while creating file\n");
 
         output.into_iter().for_each(|attached_policy| {
-            if let (Some(policy_name), Some(policy_arn)) =
-                (attached_policy.policy_name(), attached_policy.policy_arn())
-            {
-                let buf = format!("Policy Name: {policy_name}\nPolicy Arn: {policy_arn}\n");
+            if let Some(policy_name) = attached_policy.policy_name() {
+                println!("Policy Name: {}", policy_name.green().bold());
+                let buf = format!("Policy Name: {policy_name}\n");
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(policy_arn) = attached_policy.policy_arn() {
+                println!("Policy ARN: {}\n\n", policy_arn.green().bold());
+                let buf = format!("Policy Arn: {policy_arn}\n\n");
                 file.write_all(buf.as_bytes()).unwrap();
             }
         });
@@ -579,14 +600,14 @@ impl IamOps {
                 policy_names.push(name);
             });
         }
-        let arn_ouput = client
+        let arn_output = client
             .list_attached_user_policies()
             .user_name(iam_user_name)
             .set_path_prefix(path_prefix)
             .send()
             .await
             .expect("Error while Getting Policy Arns\n");
-        if let Some(policies) = arn_ouput.attached_policies {
+        if let Some(policies) = arn_output.attached_policies {
             policies.into_iter().for_each(|policy| {
                 if let Some(arn) = policy.policy_arn {
                     policy_arns.push(arn);
@@ -718,19 +739,22 @@ impl IamOps {
             let create_date = wrap_user.create_date();
             let password_last_used = wrap_user.password_last_used();
             let path = wrap_user.path();
-            if let (Some(uname), Some(id), Some(date), Some(arn), Some(path), Some(pass)) = (
-                user_name,
-                user_id,
-                create_date,
-                arn,
-                path,
-                password_last_used,
-            ) {
+            if let Some(uname) = user_name {
                 println!("IAM User Name: {}", uname.green().bold());
-                println!("IAM User ID: {}", id.green().bold());
+            }
+            if let Some(arn) = arn {
                 println!("Amazon Resource Name(arn): {}", arn.green().bold());
+            }
+            if let Some(id) = user_id {
+                println!("IAM User ID: {}", id.green().bold());
+            }
+            if let Some(date) = create_date {
+                println!("User Creation Date: {}", date.green().bold());
+            }
+            if let Some(path) = path {
                 println!("Path for the IAM User: {}", path.green().bold());
-                println!("Creation Date: {}", date.green().bold());
+            }
+            if let Some(pass) = password_last_used {
                 println!("PassWord Last Used: {}\n\n", pass.green().bold());
             }
         });
@@ -747,34 +771,45 @@ impl IamOps {
             .open("iam_users_details_in_group.txt")
             .expect("Error while creating file\n");
         outputs.into_iter().for_each(|user| {
-        let wrap_user = UserWrap::wrap(user);
-        let user_name = wrap_user.user_name();
-        let user_id = wrap_user.user_id();
-        let arn = wrap_user.arn();
-        let create_date = wrap_user.create_date();
-        let password_last_used = wrap_user.password_last_used();
-        let path = wrap_user.path();
-        if let (Some(uname), Some(id), Some(date), Some(arn), Some(path), Some(pass)) = (
-            user_name,
-            user_id,
-            create_date,
-            arn,
-            path,
-            password_last_used,
-        ) {
-            
-            let buf = format!("IAM User Name: {}\nIAM User ID: {}\nAmazon Resource Name: {}\nPath for the IAM User: {}\nCreation Date: {}\nPassword Last Used: {}\n",
-           uname,id,arn,path,date,pass
-        );
-        match file.write_all(buf.as_bytes()){
-            Ok(_) =>        println!(
-                "{}\n",
-                "All user details within the specified group are saved to the current directory in a file named 'iam_users_details_in_group.txt'".green().bold()
-            ),
-            Err(_) => println!("Error while writing Data\n")          
-        } 
-        }
-    });
+            let wrap_user = UserWrap::wrap(user);
+            let user_name = wrap_user.user_name();
+            let user_id = wrap_user.user_id();
+            let arn = wrap_user.arn();
+            let create_date = wrap_user.create_date();
+            let password_last_used = wrap_user.password_last_used();
+            let path = wrap_user.path();
+            if let Some(uname) = user_name {
+                let buf = format!("IAM User Name: {}\n", uname);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(arn) = arn {
+                let buf = format!("IAM User ID: {}\n", arn);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(id) = user_id {
+                let buf = format!("IAM User ID: {}\n", id);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(date) = create_date {
+                let buf = format!("Creation Date: {}\n", date);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(path) = path {
+                let buf = format!("Path for the IAM User: {}\n", path);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(pass) = password_last_used {
+                let buf = format!("Password Last Used: {}\n\n", pass);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+        });
+        match File::open("iam_users_details_in_group.txt"){
+        Ok(_) =>        println!(
+            "{}\n",
+            "All user details within the specified group are saved to the current directory in a file named 'iam_users_details_in_group.txt'".green().bold()
+        ),
+        Err(_) => println!("Error while writing Data\n")          
+    }
     }
     pub async fn get_iam_users_in_a_group(&self, group_name: &str) -> Vec<String> {
         let mut iam_users_in_a_group = Vec::new();
@@ -815,13 +850,19 @@ impl IamOps {
             let arn = wrap_group.group_arn();
             let path = wrap_group.group_path();
             let creation_date = wrap_group.creation_date();
-            if let (Some(gname), Some(gid), Some(arn), Some(path), Some(date)) =
-                (group_name, group_id, arn, path, creation_date)
-            {
+            if let Some(gname) = group_name {
                 println!("Group Name: {}", gname.green().bold());
+            }
+            if let Some(gid) = group_id {
                 println!("Group ID: {}", gid.green().bold());
+            }
+            if let Some(arn) = arn {
                 println!("Group ARN: {}", arn.green().bold());
+            }
+            if let Some(path) = path {
                 println!("Group Path: {}", path.green().bold());
+            }
+            if let Some(date) = creation_date {
                 println!("Creation Date: {}\n\n", date.green().bold());
             }
         });
@@ -842,21 +883,39 @@ impl IamOps {
             let arn = wrap_group.group_arn();
             let path = wrap_group.group_path();
             let creation_date = wrap_group.creation_date();
-            if let (Some(gname), Some(gid), Some(arn), Some(path), Some(date)) =
-                (group_name, group_id, arn, path, creation_date)
-            {
-             let buf = format!("Group Name: {}\nGroup ID: {}\nGroup ARN: {}\nGroup Path:{}\nCreation Date: {}\n",
-            gname,gid,arn,path,date
-            );
-            match file.write_all(buf.as_bytes()){
-                Ok(_) =>        println!(
-                    "{}\n",
-                    "All group details are saved to the current directory in a file named 'list_groups_details.txt'".green().bold()
-                ),
-                Err(_) => println!("Error while writing Data\n")
-}
+            if let Some(gname) = group_name {
+                println!("Group Name: {}", gname.green().bold());
+                let buf = format!("Group Name: {}\n", gname);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(gid) = group_id {
+                println!("Group ID: {}", gid.green().bold());
+                let buf = format!("Group ID: {}\n", gid);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(arn) = arn {
+                println!("Group ARN: {}", arn.green().bold());
+                let buf = format!("Group ARN: {}\n", arn);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(path) = path {
+                println!("Group Path: {}", path.green().bold());
+                let buf = format!("Group Path: {}\n", path);
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(date) = creation_date {
+                println!("Creation Date: {}\n\n", date.green().bold());
+                let buf = format!("Group Creation Date: {}\n", date);
+                file.write_all(buf.as_bytes()).unwrap();
             }
         });
+        match File::open("list_groups_details.txt"){
+            Ok(_) =>        println!(
+                "{}\n",
+                "All group details are saved to the current directory in a file named 'list_groups_details.txt'".green().bold()
+            ),
+            Err(_) => println!("Error while writing Data\n")
+}
         println!(
             "{}\n",
             "To create a group, select the 'Create Group' option"
@@ -941,18 +1000,17 @@ impl IamOps {
             .write(true)
             .open("inline_group_policy_names.txt")
             .expect("Error while creating file\n");
-        outputs.into_iter()
-        .for_each(|policy_name|{
-         let buf = format!("Policy Name: {}\n",policy_name);
-         match file.write_all(buf.as_bytes()){
+        outputs.into_iter().for_each(|policy_name| {
+            let buf = format!("Policy Name: {}\n", policy_name);
+            file.write_all(buf.as_bytes()).unwrap();
+        });
+        match File::open("inline_group_policy_names.txt"){
             Ok(_) =>        println!(
                 "{}\n",
                 "All the inline group policy names have been written to the current directory with the name 'inline_group_policy_names.txt'".green().bold()
             ),
             Err(_) => println!("Error while writing Data\n")
 }
-      
-        });
         println!(
             "{}\n",
             "To create the inline group policy, select the 'Put Group Policy' option"
@@ -986,8 +1044,10 @@ impl IamOps {
         outputs.iter().take(3).for_each(|attached_policy| {
             let policy_arn = attached_policy.policy_arn();
             let policy_name = attached_policy.policy_name();
-            if let (Some(policy_name), Some(policy_arn)) = (policy_name, policy_arn) {
+            if let Some(policy_name) = policy_name {
                 println!("Policy Name: {}", policy_name.green().bold());
+            }
+            if let Some(policy_arn) = policy_arn {
                 println!("Policy Arn: {}\n\n", policy_arn.green().bold());
             }
         });
@@ -1006,18 +1066,22 @@ impl IamOps {
         outputs.into_iter().take(3).for_each(|attached_policy| {
             let policy_arn = attached_policy.policy_arn;
             let policy_name = attached_policy.policy_name;
-            if let (Some(policy_name), Some(policy_arn)) = (policy_name, policy_arn) {
-              let buf = format!("Policy Name: {policy_name}\nPolicy Arn:{policy_arn}\n");
-              match file.write_all(buf.as_bytes()){
-                Ok(_) =>        println!(
-                    "{}\n",
-                    "All the attached group policy details have been written to the current directory with the name 'attached_group_policy_details.txt'".green().bold()
-                ),
-                Err(_) => println!("Error while writing Data\n")
-    }
+            if let Some(policy_name) = policy_name {
+                let buf = format!("Policy Name: {policy_name}\n");
+                file.write_all(buf.as_bytes()).unwrap();
+            }
+            if let Some(policy_arn) = policy_arn {
+                let buf = format!("Policy Arn: {policy_arn}\n");
+                file.write_all(buf.as_bytes()).unwrap();
             }
         });
-
+        match File::open("attached_group_policy_details.txt"){
+            Ok(_) =>        println!(
+                "{}\n",
+                "All the attached group policy details have been written to the current directory with the name 'attached_group_policy_details.txt'".green().bold()
+            ),
+            Err(_) => println!("Error while writing Data\n")
+}
         println!(
             "{}\n",
             "To list the inline policies for a group, use 'List Group Policies'"
