@@ -3,6 +3,10 @@ An intuitive command-line interface (CLI) for managing IAM operations on AWS
 
 ### This IAM REST API is not fully comprehensible
 ### Supported Operations
+### [CreateRole](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateRole.html)
+### [AttachRolePolicy](https://docs.aws.amazon.com/IAM/latest/APIReference/API_AttachRolePolicy.html)
+### [PutRolePolicy](https://docs.aws.amazon.com/IAM/latest/APIReference/API_PutRolePolicy.html)
+### [GetRole](https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetRole.html)
 ### [CreateUser](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html)
 ### [CreateAccessKey](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateAccessKey.html)
 ### [CreateLoginProfile](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateLoginProfile.html)

@@ -21,8 +21,12 @@ async fn main() {
     let mut iam_ops = IamOps::build(credentials.build());
     let iam_operations = vec![
         "Verify Credentials\n",
+        "Create Role\n",
+        "Attach Role Policy\n",
+        "Put Role Policy\n",
         "User Operations in IAM\n",
         "User Group Operations in IAM\n",
+        "Get Role\n",
         "Get Caller Identity\n",
         "Get Account Authorization Details\n",
         "Generate Credential Report\n",
@@ -38,7 +42,7 @@ async fn main() {
         )
         .with_starting_cursor(0)
         .with_formatter(&|input| format!("The chosen operation is: '{input}'"))
-        .with_page_size(10)
+        .with_page_size(14)
         .with_help_message("Click here https://tinyurl.com/2dv477cn to learn more")
         .prompt()
         .unwrap();
@@ -77,6 +81,138 @@ async fn main() {
                     }
                 }
             }
+            "Create Role\n" => {
+                let role_name = Text::new("Please provide the new role name for the role\n")
+                    .with_placeholder(
+                        "This name will be used to retrieve the details in the 'Get Role' option",
+                    )
+                    .with_formatter(&|input| format!("Received Role Name: '{input}'\n"))
+                    .prompt()
+                    .unwrap();
+                let description =
+                    Text::new("provide a brief description for the role you are creating\n")
+                        .with_placeholder("This parameter is optional\n")
+                        .with_help_message("Press Enter if you prefer the default")
+                        .with_formatter(&|input| {
+                            format!("Received Role Policy Description : '{input}'\n")
+                        })
+                        .prompt_skippable()
+                        .unwrap()
+                        .unwrap();
+                let trust_policy_path =
+                    Text::new("Please provide the path to the trust role policy JSON document\n")
+                        .with_placeholder(
+                            "For reference, an example trust policy document is provided here https://tinyurl.com/32r56fs9\n",
+                        )
+                        .with_formatter(&|input| format!("Received Trust Policy Path: '{input}'\n"))
+                        .prompt()
+                        .unwrap();
+                let path_prefix = Text::new("The path for the Role\n")
+                                .with_placeholder("This parameter is optional. If it is not included, it defaults to a slash (/)\n")
+                                .with_help_message("Press Enter if you prefer the default path")
+                                .with_formatter(&|input| format!("Received Path Prefix: '{input}'\n"))
+                                .prompt_skippable()
+                                .unwrap()
+                                .unwrap();
+                let max_session = Text::new("Provide the session duration for the role in hours\n")
+                    .with_placeholder("The provided session duration will override the default session duration of 1 hour\n")
+                    .with_help_message("Please ensure that the duration is between 1 and 12 hours, inclusive")
+                    .with_formatter(&|input| format!("Received Session Duration: '{input}'\n"))
+                    .prompt_skippable()
+                    .unwrap()
+                    .unwrap();
+                match (
+                    trust_policy_path.is_empty(),
+                    description.is_empty(),
+                    path_prefix.is_empty(),
+                    max_session.is_empty(),
+                    role_name.is_empty(),
+                ) {
+                    (false,false,false,false,false) => {
+                        let max_session = max_session.parse::<i32>().expect("Only integers are allowed\n");
+                        iam_ops.create_role(&trust_policy_path,Some(description),
+                            Some(path_prefix),max_session,&role_name).await;
+                    }
+                    (false,true,false,false,false) => {
+                        let max_session = max_session.parse::<i32>().expect("Only integers are allowed\n");
+                        iam_ops.create_role(&trust_policy_path,None,
+                            Some(path_prefix),max_session,&role_name).await;
+                    }
+                    (false,true,true,false,false) => {
+                        let max_session = max_session.parse::<i32>().expect("Only integers are allowed\n");
+                        iam_ops.create_role(&trust_policy_path,None,
+                            None,max_session,&role_name).await;
+                    }
+                    (false,false,true,false,false) => {
+                        let max_session = max_session.parse::<i32>().expect("Only integers are allowed\n");
+                        iam_ops.create_role(&trust_policy_path,Some(description),
+                            None,max_session,&role_name).await;
+                    }
+                    _ => println!("{}\n","The fields Trust policy path,session duration and role name can't be empty".red().bold())
+                }
+            }
+            "Attach Role Policy\n" => {
+                let policy_arn = Text::new("The Amazon Resource Name (ARN) of the Managed policy you want to attach to the Role\n")
+                .with_placeholder("Example: The ARN value 'arn:aws:iam::aws:policy/AmazonS3FullAccess' grants full access to S3 buckets for the Role'\n")
+                .with_help_message("For more information about ARNs, see https://tinyurl.com/5n7yukn6")
+                .with_formatter(&|input| {
+                    format!("Received Policy Arn: '{input}'\n")
+                })
+                .prompt()
+                .unwrap();
+                let role_name = Text::new(
+                    "Provide the role name to which you want to attach the managed policy\n",
+                )
+                .with_placeholder(
+                    "You create the role name when executing the 'Create Role' option\n",
+                )
+                .with_formatter(&|input| format!("Received Role Name: '{input}'\n"))
+                .prompt()
+                .unwrap();
+                match (policy_arn.is_empty(), role_name.is_empty()) {
+                    (false, false) => {
+                        iam_ops.attach_role_policy(&role_name, &policy_arn).await;
+                    }
+                    _ => println!("{}\n", "Fields can't be empty".red().bold()),
+                }
+            }
+            "Put Role Policy\n" => {
+                let policy_name = Text::new("The name of the inline policy document\n")
+                                .with_placeholder("a string of characters consisting of upper and lowercase alphanumeric characters with no spaces\n")
+                                .with_formatter(&|input| format!("Received Inline Policy Name: '{input}'\n"))
+                                .prompt()
+                                .unwrap();
+                let policy_document_path = Text::new("The inline policy document\n")
+                    .with_placeholder(
+                        "You can provide the path to the policy document in JSON format\n",
+                    )
+                    .with_formatter(&|input| format!("Received Policy Document path: '{input}'\n"))
+                    .with_help_message(
+                        "For more information, please click here: https://tinyurl.com/2p5wp3ek\n",
+                    )
+                    .prompt()
+                    .unwrap();
+                let role_name =
+                    Text::new("Provide the role name to which you want to add a above inline policy document\n")
+                        .with_placeholder(
+                            "You create the role name when executing the 'Create Role' option\n",
+                        )
+                        .with_formatter(&|input| format!("Received Role Name: '{input}'\n"))
+                        .prompt()
+                        .unwrap();
+                match (
+                    role_name.is_empty(),
+                    policy_name.is_empty(),
+                    policy_document_path.is_empty(),
+                ) {
+                    (false, false, false) => {
+                        iam_ops
+                            .put_role_policy(&role_name, &policy_name, &policy_document_path)
+                            .await;
+                    }
+                    _ => println!("{}\n", "No fields can be empty".red().bold()),
+                }
+            }
             "User Operations in IAM\n" => {
                 let user_ops = vec![
                     "Create User\n",
@@ -100,7 +236,7 @@ async fn main() {
                 ];
                 loop {
                     let choices = Select::new("Operations in IAM User\n", user_ops.clone())
-                        .with_page_size(18)
+                        .with_page_size(10)
                         .with_formatter(&|input| format!("The chosen operation is: '{input}'"))
                         .with_starting_cursor(0)
                         .prompt()
@@ -750,7 +886,7 @@ async fn main() {
                 loop {
                     let choices =
                         Select::new("Operations in IAM User Group\n", user_group_ops.clone())
-                            .with_page_size(17)
+                            .with_page_size(10)
                             .with_formatter(&|input| format!("The chosen operation is: {input}"))
                             .with_starting_cursor(0)
                             .prompt()
@@ -1313,6 +1449,21 @@ async fn main() {
                         "Go To Main Menu\n" => continue 'main,
                         _ => println!("Never Reach"),
                     }
+                }
+            }
+            "Get Role\n" => {
+                let role_name = Text::new("Provide the role name to which you want details for\n")
+                    .with_placeholder(
+                        "You create the role name when executing the 'Create Role' option\n",
+                    )
+                    .with_formatter(&|input| format!("Received Role Name: '{input}'\n"))
+                    .prompt()
+                    .unwrap();
+                match role_name.is_empty() {
+                    false => {
+                        iam_ops.get_role(&role_name).await;
+                    }
+                    true => println!("{}\n", "Role Name can't be empty".red().bold()),
                 }
             }
             "Get Caller Identity\n" => {

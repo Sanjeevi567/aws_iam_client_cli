@@ -1,4 +1,7 @@
-use std::{fs::OpenOptions, io::Write};
+use std::{
+    fs::{self, OpenOptions},
+    io::Write,
+};
 
 use aws_config::SdkConfig;
 use aws_sdk_iam::{
@@ -29,6 +32,99 @@ impl IamOps {
     fn get_config(&self) -> &SdkConfig {
         &self.config
     }
+    pub async fn create_role(
+        &self,
+        assume_policy_path: &str,
+        description: Option<String>,
+        path_prefix: Option<String>,
+        max_session_in_hour: i32,
+        role_name: &str,
+    ) {
+        let config = self.get_config();
+        let client = IamClient::new(config);
+        let read_assume_policy_doc = fs::read_to_string(assume_policy_path)
+            .expect("Error while opening Assume Role Policy file path\n");
+        let max_session = if (max_session_in_hour > 12) | (max_session_in_hour < 1) {
+            None
+        } else {
+            let convert_to_seconds = max_session_in_hour * (60 * 60);
+            Some(convert_to_seconds)
+        };
+        let outputs = client
+            .create_role()
+            .role_name(role_name)
+            .set_max_session_duration(max_session)
+            .assume_role_policy_document(read_assume_policy_doc)
+            .set_description(description)
+            .set_path(path_prefix)
+            .send()
+            .await
+            .expect("Error while creating Role\n");
+        if let Some(role) = outputs.role {
+            if let Some(role_id) = role.role_id {
+                println!("Role ID: {}", role_id.green().bold());
+            }
+            if let Some(role_arn) = role.arn {
+                println!("Role Arn: {}", role_arn.green().bold());
+            }
+            if let Some(date) = role.create_date {
+                let convert = date.fmt(DateTimeFormat::HttpDate).ok();
+                if let Some(time) = convert {
+                    println!("Role Creation Date and Time: {}", time.green().bold());
+                }
+            }
+            if let Some(max_session) = role.max_session_duration {
+                println!(
+                    "The maximum session duration (in hours) for the created role: {}",
+                    (max_session / (60 * 60)).to_string().green().bold()
+                );
+            }
+        }
+    }
+    pub async fn attach_role_policy(&self, role_name: &str, policy_arn: &str) {
+        let config = self.get_config();
+        let client = IamClient::new(config);
+        client
+            .attach_role_policy()
+            .policy_arn(policy_arn)
+            .role_name(role_name)
+            .send()
+            .await
+            .expect("Error while Attaching Role Policy\n");
+        println!("The provided managed policy with the policy ARN '{}' has been successfully attached to the Role Name: '{}'\n",policy_arn.green().bold(),role_name.green().bold());
+        println!(
+            "{}\n",
+            "To add or update an inline role policy, execute the 'Put Role Policy' option"
+                .yellow()
+                .bold()
+        );
+    }
+    pub async fn put_role_policy(
+        &self,
+        role_name: &str,
+        policy_name: &str,
+        policy_document_path: &str,
+    ) {
+        let config = self.get_config();
+        let client = IamClient::new(config);
+        let policy_document = fs::read_to_string(policy_document_path)
+            .expect("Error while opening the Inline Policy Document Path you provided\n");
+        client
+            .put_role_policy()
+            .role_name(role_name)
+            .policy_name(policy_name)
+            .policy_document(policy_document)
+            .send()
+            .await
+            .expect("Error while Putting Role Policy\n");
+        println!("The inline policy named {} with the specified policy document has been added or updated for the Role: {}\n",policy_name.green().bold(),role_name.green().bold());
+        println!(
+            "{}\n",
+            "To attach a managed role policy, execute the 'Attach Role Policy' option"
+                .yellow()
+                .bold()
+        );
+    }
     pub async fn create_user(&self, iam_user_name: &str, path_prefix: Option<String>) {
         let config = self.get_config();
         let client = IamClient::new(config);
@@ -41,7 +137,7 @@ impl IamOps {
             .expect("Error while creating IAM user\n");
         println!("The IAM user with the username {} has been created successfully.\nTo obtain information about this user, please use the '{}' option\n",iam_user_name.green().bold(),"Get User".yellow().bold());
         println!(
-            "To gte info about an IAM user, select the '{}' option\n",
+            "To get info about an IAM user, select the '{}' option\n",
             "Get User".yellow().bold()
         );
     }
@@ -83,7 +179,7 @@ impl IamOps {
             {
                 println!("IAM User Name: {}", uname.green().bold());
                 println!("Access Key ID: {}", ackey.green().bold());
-                println!("Creation Date: {}", time.green().bold());
+                println!("Creation Date and Time: {}", time.green().bold());
                 println!("Status: {}\n\n", status.green().bold());
                 let path_name = format!("IAM_{iam_user_name}_Credentials");
                 let mut file = OpenOptions::new()
@@ -327,7 +423,7 @@ impl IamOps {
                 println!("IAM User ID: {}", id.green().bold());
             }
             if let Some(date) = create_date {
-                println!("User Creation Date: {}", date.green().bold());
+                println!("User Creation Date and Time: {}", date.green().bold());
             }
             if let Some(path) = path {
                 println!("Path for the IAM User: {}", path.green().bold());
@@ -375,7 +471,7 @@ impl IamOps {
                 println!("IAM User ID: {}", id.green().bold());
             }
             if let Some(date) = create_date {
-                println!("User Creation Date: {}", date.green().bold());
+                println!("User Creation Date and Time: {}", date.green().bold());
             }
             if let Some(path) = path {
                 println!("Path for the IAM User: {}", path.green().bold());
@@ -419,7 +515,7 @@ impl IamOps {
                 file.write_all(buf.as_bytes()).unwrap();
             }
             if let Some(date) = create_date {
-                let buf = format!("Creation Date: {}\n", date);
+                let buf = format!("Creation Date and Time: {}\n", date);
                 file.write_all(buf.as_bytes()).unwrap();
             }
             if let Some(path) = path {
@@ -749,7 +845,7 @@ impl IamOps {
                 println!("IAM User ID: {}", id.green().bold());
             }
             if let Some(date) = create_date {
-                println!("User Creation Date: {}", date.green().bold());
+                println!("User Creation Date and Time: {}", date.green().bold());
             }
             if let Some(path) = path {
                 println!("Path for the IAM User: {}", path.green().bold());
@@ -791,7 +887,7 @@ impl IamOps {
                 file.write_all(buf.as_bytes()).unwrap();
             }
             if let Some(date) = create_date {
-                let buf = format!("Creation Date: {}\n", date);
+                let buf = format!("Creation Date and Time: {}\n", date);
                 file.write_all(buf.as_bytes()).unwrap();
             }
             if let Some(path) = path {
@@ -863,7 +959,7 @@ impl IamOps {
                 println!("Group Path: {}", path.green().bold());
             }
             if let Some(date) = creation_date {
-                println!("Creation Date: {}\n\n", date.green().bold());
+                println!("Creation Date and Time: {}\n\n", date.green().bold());
             }
         });
         println!(
@@ -904,8 +1000,8 @@ impl IamOps {
                 file.write_all(buf.as_bytes()).unwrap();
             }
             if let Some(date) = creation_date {
-                println!("Creation Date: {}\n\n", date.green().bold());
-                let buf = format!("Group Creation Date: {}\n", date);
+                println!("Creation Date and Time: {}\n\n", date.green().bold());
+                let buf = format!("Group Creation Date and Time: {}\n", date);
                 file.write_all(buf.as_bytes()).unwrap();
             }
         });
@@ -1229,6 +1325,82 @@ impl IamOps {
                 .yellow()
                 .bold()
         );
+    }
+    pub async fn get_role(&self, role_name: &str) {
+        let config = self.get_config();
+        let client = IamClient::new(config);
+        let outputs = client
+            .get_role()
+            .role_name(role_name)
+            .send()
+            .await
+            .expect("Error while Getting Role\n");
+        if let Some(role_details) = outputs.role {
+            if let Some(role_id) = role_details.role_id {
+                println!("Role ID: {}", role_id.green().bold());
+            }
+            if let Some(role_arn) = role_details.arn {
+                println!("Role Arn: {}", role_arn.green().bold());
+            }
+            if let Some(path) = role_details.path {
+                println!("Role Path: {}", path.green().bold());
+            }
+            if let Some(description) = role_details.description {
+                println!("Description of Role: {}", description.green().bold());
+            }
+            if let Some(create_date) = role_details.create_date {
+                let convert_time = create_date.fmt(DateTimeFormat::HttpDate).ok();
+                if let Some(time) = convert_time {
+                    println!("Creation Date and Time: {}", time.green().bold());
+                }
+            }
+            if let Some(assume_doc) = role_details.assume_role_policy_document {
+                let decode_policy_document = decode(assume_doc);
+                let mut file = OpenOptions::new()
+                    .create(true)
+                    .read(true)
+                    .write(true)
+                    .open("AssumePolicyDocument.json")
+                    .expect("Error while creating file\n");
+                file.write_all(decode_policy_document.as_bytes()).unwrap();
+                match File::open("AssumePolicyDocument.json") {
+                    Ok(_) => println!("The 'Assume Policy Document' has been written to the current directory as '{}'","AssumePolicyDocument.json".green().bold()),
+                    Err(_) => println!(
+                        "{}\n",
+                        "Error while writing Assume Policy data".red().bold()
+                    ),
+                }
+            }
+            if let Some(permission_boundary) = role_details.permissions_boundary {
+                if let Some(policy_arn) = permission_boundary.permissions_boundary_arn {
+                    println!("Permission Boundary Arn: {}", policy_arn.green().bold());
+                }
+                if let Some(policy_type) = permission_boundary.permissions_boundary_type {
+                    let type_ = policy_type.as_str();
+                    println!(
+                        "Permission Boundary Attachment Type: {}",
+                        type_.green().bold()
+                    );
+                }
+            }
+            if let Some(max_duration) = role_details.max_session_duration {
+                println!(
+                    "The maximum session duration (in hours) for the specified role: {}",
+                    (max_duration / (60 * 60)).to_string().green().bold()
+                );
+            }
+            if let Some(last_used_deatils) = role_details.role_last_used {
+                if let Some(region) = last_used_deatils.region {
+                    println!("Last Used Region: {}", region.green().bold());
+                }
+                if let Some(time) = last_used_deatils.last_used_date {
+                    let convert = time.fmt(DateTimeFormat::HttpDate).ok();
+                    if let Some(time) = convert {
+                        println!("Role Last Used: {}\n", time.green().bold());
+                    }
+                }
+            }
+        }
     }
     pub async fn get_account_autherization_details(&self) {
         let config = self.get_config();
@@ -1617,7 +1789,7 @@ impl WrapUserDetail {
             self.0.path.take(),
             self.date(),
         ) {
-            let user_name = format!("User details, data as received from https://tinyurl.com/596ftxfs\n\n\n\nIAM User Name: {uname}\nIAM User ID: {uid}\nUser ARN: {arn}\nUser Path: {path}\nUser Creation Date: {date}\n\n",);
+            let user_name = format!("User details, data as received from https://tinyurl.com/596ftxfs\n\n\n\nIAM User Name: {uname}\nIAM User ID: {uid}\nUser ARN: {arn}\nUser Path: {path}\nUser Creation Date and Time: {date}\n\n",);
             write_to.write_all(user_name.as_bytes()).unwrap();
             self.write_user_policy_detail(write_to);
             self.write_group_list(write_to);
@@ -1684,7 +1856,7 @@ impl WrapGroupDetail {
             self.0.path.take(),
             self.create_date(),
         ) {
-            let buf = format!("Group details, data as received from https://tinyurl.com/52wvzwp6\n\n\n\nGroup Name: {gname}\nGroup ID: {gid}\nGroup Arn: {arn}\nGroup Path: {path}\nGroup Creation Date: {date}\n");
+            let buf = format!("Group details, data as received from https://tinyurl.com/52wvzwp6\n\n\n\nGroup Name: {gname}\nGroup ID: {gid}\nGroup Arn: {arn}\nGroup Path: {path}\nGroup Creation Date and Time: {date}\n");
             write_to
                 .write_all(buf.as_bytes())
                 .expect("Error while writing Group Details\n");
@@ -1729,7 +1901,7 @@ impl WrapRoleDetail {
                     profile.roles,
                     profile.tags,
                 ) {
-                   let buf = format!("Instance Profile Name: {profile_name}\nInstance Profile ID: {profile_id}\nInstance Profile Arn: {arn}\nInstance Profile Path: {path}\nInstance Profile Creation Date: {date}\n"); 
+                   let buf = format!("Instance Profile Name: {profile_name}\nInstance Profile ID: {profile_id}\nInstance Profile Arn: {arn}\nInstance Profile Path: {path}\nInstance Profile Creation Date and Time: {date}\n"); 
                    write_to.write_all(buf.as_bytes()).expect("Error while writing Instance Profile Info part 1\n");
                    write_to.write_all("Role Details\n\n".as_bytes()).unwrap();
                    roles.into_iter()
@@ -1754,7 +1926,7 @@ impl WrapRoleDetail {
                     date_time,role.assume_role_policy_document,role.description,
                     role.max_session_duration,permissions_boundary,role.tags,role_last_used){
                     let decode_policy_document = decode(assume_role);
-                    let buf = format!("Role Name: {rname}\nRole ID: {rid}\nRole Arn: {arn}\nRole Path: {path}\nRole Creation Date: {date}\nAssume Role Policy Document: {decode_policy_document}\nDescirption: {descrip}\nMaximum Session Duration: {max}\nPermission Boundary\nPermission Boundary Type: {boundary_type}\nPermission Boundary Arn: {boundary_arn}\nRole Tags: {tags:#?}\nRole Usage\nRole Last Used: {last_used}\nRole Region: {region}\n");
+                    let buf = format!("Role Name: {rname}\nRole ID: {rid}\nRole Arn: {arn}\nRole Path: {path}\nRole Creation Date and Time: {date}\nAssume Role Policy Document: {decode_policy_document}\nDescirption: {descrip}\nMaximum Session Duration: {max}\nPermission Boundary\nPermission Boundary Type: {boundary_type}\nPermission Boundary Arn: {boundary_arn}\nRole Tags: {tags:#?}\nRole Usage\nRole Last Used: {last_used}\nRole Region: {region}\n");
                     write_to.write_all(buf.as_bytes()).expect("Error while writing Instance profile Info part 2");
                     }
                    });
@@ -1865,7 +2037,7 @@ impl WrapRoleDetail {
             self.0.assume_role_policy_document.take(),
         ) {
             let decode_policy_document = decode(assume_policy);
-            let buf = format!("Role Detail,data as received from https://tinyurl.com/2s979vcd\n\n\n\nRole Name: {rname}\nRole ID: {rid}\nRole Arn: {arn}\nRole Path: {path}\nRole Creation Date: {date}\nAssume Role Policy Document: {decode_policy_document}\n\n");
+            let buf = format!("Role Detail,data as received from https://tinyurl.com/2s979vcd\n\n\n\nRole Name: {rname}\nRole ID: {rid}\nRole Arn: {arn}\nRole Path: {path}\nRole Creation Date and Time: {date}\nAssume Role Policy Document: {decode_policy_document}\n\n");
             write_to
                 .write_all(buf.as_bytes())
                 .expect("Error while writing Role Detail\n");
@@ -1907,7 +2079,7 @@ impl WrapManagedPolicyDetail {
                     .flatten();
                 if let (Some(doc), Some(vid), Some(date)) = (list.document, list.version_id, date) {
                     let decode_policy_document = decode(doc);
-                    let buf = format!("Document: {decode_policy_document}\n\nVersion ID: {vid}\nIs Default Version: {}\nCreation Date: {date}",list.is_default_version);
+                    let buf = format!("Document: {decode_policy_document}\n\nVersion ID: {vid}\nIs Default Version: {}\nCreation Date and Time: {date}",list.is_default_version);
                     write_to.write_all(buf.as_bytes()).expect("Error while writing Policy Version List\n");
                 }
             });
@@ -1939,7 +2111,7 @@ impl WrapManagedPolicyDetail {
             self.0.is_attachable,
             self.0.description.take(),
         ) {
-            let buf = format!("Managed Policy Detail,data as received from https://tinyurl.com/3tpcb5ej\n\n\n\nManaged Policy Name: {pname}\nManaged Policy ID: {pid}\nManaged Policy Arn: {arn}\nManaged Policy Path: {path}\nCreation Date: {cdate}\nUpdate Date: {udate}\nDescription :{descrip}\nAttachment Count: {count}\nPermissions boundary usage count: {boundary_count}\nIs attachable: {is_attachable}\nDefault Version ID: {version}\n");
+            let buf = format!("Managed Policy Detail,data as received from https://tinyurl.com/3tpcb5ej\n\n\n\nManaged Policy Name: {pname}\nManaged Policy ID: {pid}\nManaged Policy Arn: {arn}\nManaged Policy Path: {path}\nCreation Date and Time: {cdate}\nUpdate Date: {udate}\nDescription :{descrip}\nAttachment Count: {count}\nPermissions boundary usage count: {boundary_count}\nIs attachable: {is_attachable}\nDefault Version ID: {version}\n");
             write_to
                 .write_all(buf.as_bytes())
                 .expect("Error while writing Managed Policy Detail");
@@ -1964,7 +2136,7 @@ mod pdf_writer {
         let headers = vec![
             String::from("User"),
             String::from("Amazon Resource Name"),
-            String::from("User Creation Time"),
+            String::from("User Creation Date and Time"),
             String::from("Password Enabled"),
             String::from("Password Last Used"),
             String::from("Password Last Changed"),
