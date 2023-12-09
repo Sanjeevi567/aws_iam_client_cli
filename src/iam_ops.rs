@@ -18,6 +18,8 @@ use aws_sdk_iam::{
 };
 use aws_sdk_sts::Client as StsClient;
 use colored::Colorize;
+use comfy_table::presets::UTF8_FULL;
+use comfy_table::{Attribute, Cell, CellAlignment, Color, Table};
 use std::fs::File;
 use tokio_stream::StreamExt;
 use urldecode::decode;
@@ -167,6 +169,16 @@ impl IamOps {
             .send()
             .await
             .expect("Error while creating access key for IAM user\n");
+        let mut user_table = Table::new();
+        user_table
+            .load_preset(UTF8_FULL)
+            .set_width(80)
+            .set_header(vec![Cell::new(
+                "Access Key Information that you just created",
+            )
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold)
+            .set_alignment(CellAlignment::Left)]);
         if let Some(access_key) = output.access_key {
             let wrap = WrapAccessKey::wrap(access_key);
             let user_name = wrap.user_name();
@@ -177,10 +189,29 @@ impl IamOps {
             if let (Some(uname), Some(ackey), Some(seckey), Some(time), Some(status)) =
                 (user_name, access_key, secret_key, create_time, status)
             {
-                println!("IAM User Name: {}", uname.green().bold());
-                println!("Access Key ID: {}", ackey.green().bold());
-                println!("Creation Date and Time: {}", time.green().bold());
-                println!("Status: {}\n\n", status.green().bold());
+                user_table.add_row(vec![
+                    Cell::new(format!("IAM User Name: {}", uname))
+                        .fg(Color::Green)
+                        .add_attribute(Attribute::Bold)
+                        .set_alignment(CellAlignment::Center),
+                    Cell::new(format!("Access Key ID: {}", ackey))
+                        .fg(Color::Green)
+                        .add_attribute(Attribute::Bold)
+                        .set_alignment(CellAlignment::Center),
+                    Cell::new(format!("Creation Date and Time: {}", time))
+                        .fg(Color::Green)
+                        .add_attribute(Attribute::Bold)
+                        .set_alignment(CellAlignment::Center),
+                    Cell::new(format!("Status: {}", status))
+                        .fg(Color::Green)
+                        .add_attribute(Attribute::Bold)
+                        .set_alignment(CellAlignment::Center),
+                ]);
+                //println!("IAM User Name: {}", uname.green().bold());
+                //println!("Access Key ID: {}", ackey.green().bold());
+                //println!("Creation Date and Time: {}", time.green().bold());
+                //println!("Status: {}\n\n", status.green().bold());
+                println!("{}", user_table);
                 let path_name = format!("IAM_{iam_user_name}_Credentials");
                 let mut file = OpenOptions::new()
                     .create(true)
@@ -405,6 +436,14 @@ impl IamOps {
             .send()
             .await
             .expect("Error while getting IAM User Info\n");
+        let mut user_table = Table::new();
+        user_table
+            .set_header(vec![Cell::new("IAM User Details")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         if let Some(user) = output.user {
             let wrap = UserWrap::wrap(user);
             let user_name = wrap.user_name();
@@ -414,24 +453,55 @@ impl IamOps {
             let path = wrap.path();
             let password_last_used = wrap.password_last_used();
             if let Some(uname) = user_name {
-                println!("IAM User Name: {}", uname.green().bold());
+                let format_uname = format!("IAM User Name: {}", uname);
+                user_table.add_row(vec![Cell::new(format_uname)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("IAM User Name: {}", uname.green().bold());
             }
             if let Some(arn) = arn {
-                println!("Amazon Resource Name(arn): {}", arn.green().bold());
+                let format_arn = format!("Amazon Resource Name(arn): {}", arn);
+                user_table.add_row(vec![Cell::new(format_arn)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //  println!("Amazon Resource Name(arn): {}", arn.green().bold());
             }
             if let Some(id) = user_id {
-                println!("IAM User ID: {}", id.green().bold());
+                let format_id = format!("IAM User ID: {}", id);
+                user_table.add_row(vec![Cell::new(format_id)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("IAM User ID: {}", id.green().bold());
             }
             if let Some(date) = create_date {
-                println!("User Creation Date and Time: {}", date.green().bold());
+                let format_date = format!("User Creation Date and Time: {}", date);
+                user_table.add_row(vec![Cell::new(format_date)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("User Creation Date and Time: {}", date.green().bold());
             }
             if let Some(path) = path {
-                println!("Path for the IAM User: {}", path.green().bold());
+                let format_path = format!("Path for the IAM User: {}", path);
+                user_table.add_row(vec![Cell::new(format_path)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Path for the IAM User: {}", path.green().bold());
             }
             if let Some(pass) = password_last_used {
-                println!("PassWord Last Used: {}\n\n", pass.green().bold());
+                let format_pass_last_used = format!("PassWord Last Used: {}", pass);
+                user_table.add_row(vec![Cell::new(format_pass_last_used)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("PassWord Last Used: {}\n\n", pass.green().bold());
             }
         }
+        println!("{}", user_table);
         println!(
             "{}\n",
             "To create an IAM user, select the 'Create User' option"
@@ -453,6 +523,16 @@ impl IamOps {
             .collect::<Result<Vec<User>, _>>()
             .await
             .expect("Error while listing IAM users\n");
+        let mut user_table = Table::new();
+        user_table
+            .set_header(vec![Cell::new(
+                "At least three IAM user details are displayed",
+            )
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold)
+            .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         outputs.iter().take(3).for_each(|user| {
             let wrap_user = UserWrap::wrap(user.to_owned());
             let user_name = wrap_user.user_name();
@@ -462,30 +542,56 @@ impl IamOps {
             let password_last_used = wrap_user.password_last_used();
             let path = wrap_user.path();
             if let Some(uname) = user_name {
-                println!("IAM User Name: {}", uname.green().bold());
+                let format_uname = format!("IAM User Name: {}", uname);
+                user_table.add_row(vec![Cell::new(format_uname)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("IAM User Name: {}", uname.green().bold());
             }
             if let Some(arn) = arn {
-                println!("Amazon Resource Name(arn): {}", arn.green().bold());
+                let format_arn = format!("Amazon Resource Name(arn): {}", arn);
+                user_table.add_row(vec![Cell::new(format_arn)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Amazon Resource Name(arn): {}", arn.green().bold());
             }
             if let Some(id) = user_id {
-                println!("IAM User ID: {}", id.green().bold());
+                let format_id = format!("IAM User ID: {}", id);
+                user_table.add_row(vec![Cell::new(format_id)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("IAM User ID: {}", id.green().bold());
             }
             if let Some(date) = create_date {
-                println!("User Creation Date and Time: {}", date.green().bold());
+                let format_date = format!("User Creation Date and Time: {}", date);
+                user_table.add_row(vec![Cell::new(format_date)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("User Creation Date and Time: {}", date.green().bold());
             }
             if let Some(path) = path {
-                println!("Path for the IAM User: {}", path.green().bold());
+                let format_path = format!("Path for the IAM User: {}", path);
+                user_table.add_row(vec![Cell::new(format_path)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("Path for the IAM User: {}", path.green().bold());
             }
             if let Some(pass) = password_last_used {
-                println!("PassWord Last Used: {}\n\n", pass.green().bold());
+                let format_pass_last_used = format!("PassWord Last Used: {}\n\n", pass);
+                user_table.add_row(vec![Cell::new(format_pass_last_used)
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("PassWord Last Used: {}\n\n", pass.green().bold());
             }
+            user_table.add_row(vec![Cell::new("\n")]);
         });
-        println!(
-            "{}\n",
-            "At least three IAM user details are displayed"
-                .yellow()
-                .bold()
-        );
+        println!("{}", user_table);
         let mut file = OpenOptions::new()
             .create(true)
             .read(true)
@@ -556,15 +662,24 @@ impl IamOps {
             .collect::<Result<Vec<String>, _>>()
             .await
             .expect("Error while listing user policies\n");
+        let mut user_table = Table::new();
+        user_table
+            .set_header(vec![Cell::new(
+                "At least five IAM inline user policy names are displayed",
+            )
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold)
+            .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         output.iter().take(5).for_each(|policy| {
-            println!("Policy: {}\n\n", policy.green().bold());
+            user_table.add_row(vec![Cell::new(format!("Policy: {}", policy))
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center)]);
+            // println!("Policy: {}\n\n", policy.green().bold());
         });
-        println!(
-            "{}\n",
-            "At least five IAM inline user policies are displayed"
-                .yellow()
-                .bold()
-        );
+        println!("{}", user_table);
         let mut file = OpenOptions::new()
             .create(true)
             .read(true)
@@ -612,20 +727,32 @@ impl IamOps {
             .collect::<Result<Vec<AttachedPolicy>, _>>()
             .await
             .expect("Error while listing attached user policies\n");
+        let mut policy_table = Table::new();
+        policy_table
+            .set_header(vec![Cell::new(
+                "At least three IAM user-attached policy names and ARNs are displayed",
+            )
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold)
+            .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         output.iter().take(3).for_each(|attached_policy| {
             if let Some(policy_name) = attached_policy.policy_name() {
-                println!("Policy Name: {}", policy_name.green().bold());
+                policy_table.add_row(vec![Cell::new(format!("Policy Name: {}", policy_name))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Policy Name: {}", policy_name.green().bold());
             }
             if let Some(policy_arn) = attached_policy.policy_arn() {
-                println!("Policy ARN: {}\n\n", policy_arn.green().bold());
+                policy_table.add_row(vec![Cell::new(format!("Policy ARN: {}\n\n", policy_arn))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Policy ARN: {}\n\n", policy_arn.green().bold());
             }
         });
-        println!(
-            "{}\n",
-            "At least three IAM user attached policies are displayed"
-                .yellow()
-                .bold()
-        );
         let mut file = OpenOptions::new()
             .create(true)
             .read(true)
@@ -827,6 +954,16 @@ impl IamOps {
             .collect::<Result<Vec<User>, _>>()
             .await
             .expect("Error while Getting Group information\n");
+        let mut group_table = Table::new();
+        group_table
+            .set_header(vec![Cell::new(
+                "At least two IAM user details from the specified user group are displayed",
+            )
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold)
+            .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         outputs.iter().take(2).for_each(|user| {
             let wrap_user = UserWrap::wrap(user.to_owned());
             let user_name = wrap_user.user_name();
@@ -836,30 +973,55 @@ impl IamOps {
             let password_last_used = wrap_user.password_last_used();
             let path = wrap_user.path();
             if let Some(uname) = user_name {
-                println!("IAM User Name: {}", uname.green().bold());
+                group_table.add_row(vec![Cell::new(format!("IAM User Name: {}", uname))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("IAM User Name: {}", uname.green().bold());
             }
             if let Some(arn) = arn {
-                println!("Amazon Resource Name(arn): {}", arn.green().bold());
+                group_table.add_row(vec![Cell::new(format!(
+                    "Amazon Resource Name(arn): {}",
+                    arn
+                ))
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center)]);
+                //println!("Amazon Resource Name(arn): {}", arn.green().bold());
             }
             if let Some(id) = user_id {
-                println!("IAM User ID: {}", id.green().bold());
+                group_table.add_row(vec![Cell::new(format!("IAM User ID: {}", id))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("IAM User ID: {}", id.green().bold());
             }
             if let Some(date) = create_date {
-                println!("User Creation Date and Time: {}", date.green().bold());
+                group_table.add_row(vec![Cell::new(format!(
+                    "User Creation Date and Time: {}",
+                    date
+                ))
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center)]);
+                //println!("User Creation Date and Time: {}", date.green().bold());
             }
             if let Some(path) = path {
-                println!("Path for the IAM User: {}", path.green().bold());
+                group_table.add_row(vec![Cell::new(format!("Path for the IAM User: {}", path))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("Path for the IAM User: {}", path.green().bold());
             }
             if let Some(pass) = password_last_used {
-                println!("PassWord Last Used: {}\n\n", pass.green().bold());
+                group_table.add_row(vec![Cell::new(format!("PassWord Last Used: {}", pass))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("PassWord Last Used: {}\n\n", pass.green().bold());
             }
         });
-        println!(
-            "{}\n",
-            "At least two IAM user details from the specified group are displayed"
-                .yellow()
-                .bold()
-        );
+        println!("{}", group_table);
         let mut file = OpenOptions::new()
             .create(true)
             .read(true)
@@ -939,6 +1101,16 @@ impl IamOps {
             .collect::<Result<Vec<Group>, _>>()
             .await
             .expect("Error while Listing Groups\n");
+        let mut group_table = Table::new();
+        group_table
+            .set_header(vec![Cell::new(
+                "At least three details of IAM Groups are displayed",
+            )
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold)
+            .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         outputs.iter().take(3).for_each(|group| {
             let wrap_group = WrapGroup::wrap(group.to_owned());
             let group_name = wrap_group.group_name();
@@ -947,25 +1119,42 @@ impl IamOps {
             let path = wrap_group.group_path();
             let creation_date = wrap_group.creation_date();
             if let Some(gname) = group_name {
-                println!("Group Name: {}", gname.green().bold());
+                group_table.add_row(vec![Cell::new(format!("Group Name: {}", gname))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Group Name: {}", gname.green().bold());
             }
             if let Some(gid) = group_id {
-                println!("Group ID: {}", gid.green().bold());
+                group_table.add_row(vec![Cell::new(format!("Group ID: {}", gid))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Group ID: {}", gid.green().bold());
             }
             if let Some(arn) = arn {
-                println!("Group ARN: {}", arn.green().bold());
+                group_table.add_row(vec![Cell::new(format!("Group ARN: {}", arn))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                // println!("Group ARN: {}", arn.green().bold());
             }
             if let Some(path) = path {
-                println!("Group Path: {}", path.green().bold());
+                group_table.add_row(vec![Cell::new(format!("Group Path: {}", path))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Group Path: {}", path.green().bold());
             }
             if let Some(date) = creation_date {
-                println!("Creation Date and Time: {}\n\n", date.green().bold());
+                group_table.add_row(vec![Cell::new(format!("Creation Date and Time: {}", date))
+                    .fg(Color::Green)
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Center)]);
+                //println!("Creation Date and Time: {}\n\n", date.green().bold());
             }
         });
-        println!(
-            "{}\n",
-            "At least three Group details are displayed".yellow().bold()
-        );
+        println!("{}", group_table);
         let mut file = OpenOptions::new()
             .create(true)
             .read(true)
@@ -1081,15 +1270,24 @@ impl IamOps {
             .collect::<Result<Vec<String>, _>>()
             .await
             .expect("Error while listing group policies\n");
+        let mut group_policy_table = Table::new();
+        group_policy_table
+            .set_header(vec![Cell::new(
+                "At least five inline Group Policy names are displayed",
+            )
+            .fg(Color::Yellow)
+            .add_attribute(Attribute::Bold)
+            .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         outputs.iter().take(5).for_each(|policy_name| {
-            println!("Policy Name: {}\n\n", policy_name.green().bold());
+            group_policy_table.add_row(vec![Cell::new(format!("Policy Name: {}", policy_name))
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center)]);
+            //println!("Policy Name: {}\n\n", policy_name.green().bold());
         });
-        println!(
-            "{}\n",
-            "At least five inline Group Policy names are displayed."
-                .yellow()
-                .bold()
-        );
+        println!("{}", group_policy_table);
         let mut file = OpenOptions::new()
             .create(true)
             .read(true)
@@ -1137,22 +1335,42 @@ impl IamOps {
             .collect::<Result<Vec<AttachedPolicy>, _>>()
             .await
             .expect("Error while Listing Attached Group Polices\n");
+        let mut group_policy_table = Table::new();
+        group_policy_table
+            .set_header(vec![Cell::new(
+            "At least three attached or managed Group Policy names and ARN details are displayed",
+        )
+        .fg(Color::Yellow)
+        .add_attribute(Attribute::Bold)
+        .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         outputs.iter().take(3).for_each(|attached_policy| {
             let policy_arn = attached_policy.policy_arn();
             let policy_name = attached_policy.policy_name();
             if let Some(policy_name) = policy_name {
-                println!("Policy Name: {}", policy_name.green().bold());
+                group_policy_table.add_row(vec![Cell::new(format!(
+                    "Policy Name: {}",
+                    policy_name
+                ))
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center)]);
+                //println!("Policy Name: {}", policy_name.green().bold());
             }
             if let Some(policy_arn) = policy_arn {
-                println!("Policy Arn: {}\n\n", policy_arn.green().bold());
+                group_policy_table.add_row(vec![Cell::new(format!(
+                    "Policy Arn: {}\n\n",
+                    policy_arn
+                ))
+                .fg(Color::Green)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center)]);
+                //println!("Policy Arn: {}\n\n", policy_arn.green().bold());
             }
+            group_policy_table.add_row(vec![Cell::new("\n")]);
         });
-        println!(
-            "{}\n",
-            "At least three Attached or Managed Group Policy Details are displayed."
-                .yellow()
-                .bold()
-        );
+        println!("{}", group_policy_table);
         let mut file = OpenOptions::new()
             .create(true)
             .read(true)
@@ -1335,23 +1553,57 @@ impl IamOps {
             .send()
             .await
             .expect("Error while Getting Role\n");
+        let mut role_table = Table::new();
+        role_table
+            .set_header(vec![Cell::new("Role Details")
+                .fg(Color::Yellow)
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Left)])
+            .load_preset(UTF8_FULL)
+            .set_width(80);
         if let Some(role_details) = outputs.role {
             if let Some(role_id) = role_details.role_id {
-                println!("Role ID: {}", role_id.green().bold());
+                role_table.add_row(vec![Cell::new(format!("Role ID: {}", role_id))
+                    .fg(Color::Green)
+                    .set_alignment(CellAlignment::Center)
+                    .add_attribute(Attribute::Bold)]);
+                //println!("Role ID: {}", role_id.green().bold());
             }
             if let Some(role_arn) = role_details.arn {
-                println!("Role Arn: {}", role_arn.green().bold());
+                role_table.add_row(vec![Cell::new(format!("Role Arn: {}", role_arn))
+                    .fg(Color::Green)
+                    .set_alignment(CellAlignment::Center)
+                    .add_attribute(Attribute::Bold)]);
+                // println!("Role Arn: {}", role_arn.green().bold());
             }
             if let Some(path) = role_details.path {
-                println!("Role Path: {}", path.green().bold());
+                role_table.add_row(vec![Cell::new(format!("Role Path: {}", path))
+                    .fg(Color::Green)
+                    .set_alignment(CellAlignment::Center)
+                    .add_attribute(Attribute::Bold)]);
+                //println!("Role Path: {}", path.green().bold());
             }
             if let Some(description) = role_details.description {
-                println!("Description of Role: {}", description.green().bold());
+                role_table.add_row(vec![Cell::new(format!(
+                    "Description of Role: {}",
+                    description
+                ))
+                .fg(Color::Green)
+                .set_alignment(CellAlignment::Center)
+                .add_attribute(Attribute::Bold)]);
+                //println!("Description of Role: {}", description.green().bold());
             }
             if let Some(create_date) = role_details.create_date {
                 let convert_time = create_date.fmt(DateTimeFormat::HttpDate).ok();
                 if let Some(time) = convert_time {
-                    println!("Creation Date and Time: {}", time.green().bold());
+                    role_table.add_row(vec![Cell::new(format!(
+                        "Creation Date and Time: {}",
+                        time
+                    ))
+                    .fg(Color::Green)
+                    .set_alignment(CellAlignment::Center)
+                    .add_attribute(Attribute::Bold)]);
+                    // println!("Creation Date and Time: {}", time.green().bold());
                 }
             }
             if let Some(assume_doc) = role_details.assume_role_policy_document {
@@ -1373,34 +1625,56 @@ impl IamOps {
             }
             if let Some(permission_boundary) = role_details.permissions_boundary {
                 if let Some(policy_arn) = permission_boundary.permissions_boundary_arn {
-                    println!("Permission Boundary Arn: {}", policy_arn.green().bold());
+                    role_table.add_row(vec![Cell::new(format!(
+                        "Permission Boundary Arn: {}",
+                        policy_arn
+                    ))
+                    .fg(Color::Green)
+                    .set_alignment(CellAlignment::Center)
+                    .add_attribute(Attribute::Bold)]);
+                    //   println!("Permission Boundary Arn: {}", policy_arn.green().bold());
                 }
                 if let Some(policy_type) = permission_boundary.permissions_boundary_type {
                     let type_ = policy_type.as_str();
-                    println!(
+                    role_table.add_row(vec![Cell::new(format!(
                         "Permission Boundary Attachment Type: {}",
-                        type_.green().bold()
-                    );
+                        type_
+                    ))
+                    .fg(Color::Green)
+                    .set_alignment(CellAlignment::Center)
+                    .add_attribute(Attribute::Bold)]);
                 }
             }
             if let Some(max_duration) = role_details.max_session_duration {
-                println!(
+                role_table.add_row(vec![Cell::new(format!(
                     "The maximum session duration (in hours) for the specified role: {}",
-                    (max_duration / (60 * 60)).to_string().green().bold()
-                );
+                    (max_duration / (60 * 60))
+                ))
+                .fg(Color::Green)
+                .set_alignment(CellAlignment::Center)
+                .add_attribute(Attribute::Bold)]);
             }
             if let Some(last_used_deatils) = role_details.role_last_used {
                 if let Some(region) = last_used_deatils.region {
-                    println!("Last Used Region: {}", region.green().bold());
+                    role_table.add_row(vec![Cell::new(format!("Last Used Region: {}", region))
+                        .fg(Color::Green)
+                        .set_alignment(CellAlignment::Center)
+                        .add_attribute(Attribute::Bold)]);
+                    // println!("Last Used Region: {}", region.green().bold());
                 }
                 if let Some(time) = last_used_deatils.last_used_date {
                     let convert = time.fmt(DateTimeFormat::HttpDate).ok();
                     if let Some(time) = convert {
-                        println!("Role Last Used: {}\n", time.green().bold());
+                        role_table.add_row(vec![Cell::new(format!("Role Last Used: {}\n", time))
+                            .fg(Color::Green)
+                            .set_alignment(CellAlignment::Center)
+                            .add_attribute(Attribute::Bold)]);
+                        //println!("Role Last Used: {}\n", time.green().bold());
                     }
                 }
             }
         }
+        println!("{}", role_table);
     }
     pub async fn get_account_autherization_details(&self) {
         let config = self.get_config();

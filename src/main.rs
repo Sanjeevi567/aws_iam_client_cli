@@ -2,6 +2,8 @@ mod credentials;
 use credentials::{load_credential_from_env, CredentInitialize};
 mod iam_ops;
 use colored::Colorize;
+use comfy_table::presets::UTF8_FULL;
+use comfy_table::{Attribute, Cell, CellAlignment, Color, Table};
 use dotenv::dotenv;
 use iam_ops::IamOps;
 use inquire::{
@@ -276,13 +278,26 @@ async fn main() {
                         }
                         "Retrieve IAM Users\n" => {
                             let get_available_iam_users = iam_ops.get_iam_users().await;
-                            println!(
-                                "{}\n",
-                                "IAM Users in the Provided Credentials".green().bold()
-                            );
-                            get_available_iam_users.into_iter().for_each(|user| {
-                                println!("{}", user.green().bold());
-                            });
+
+                            let mut iam_users_table = Table::new();
+                            iam_users_table
+                                .load_preset(UTF8_FULL)
+                                .set_width(80)
+                                .set_header(vec![Cell::new(
+                                    "IAM Users in the Provided Credentials",
+                                )
+                                .fg(Color::Yellow)
+                                .add_attribute(Attribute::Bold)]);
+                            /*get_available_iam_users.into_iter().for_each(|user| {
+                                //println!("{}", user.green().bold());
+                            }); */
+                            for user in get_available_iam_users {
+                                iam_users_table.add_row(vec![Cell::new(user)
+                                    .fg(Color::Green)
+                                    .add_attribute(Attribute::Bold)
+                                    .set_alignment(CellAlignment::Center)]);
+                            }
+                            println!("{iam_users_table}");
                             println!("");
                             println!("{}\n","This information is used in various IAM operations as a placeholder for you to choose".yellow().bold());
                         }

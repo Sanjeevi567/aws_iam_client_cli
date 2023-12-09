@@ -2,8 +2,8 @@
 name = "aws_iam_client"
 version = "0.1.0"
 edition = "2021"
-authors = ["Sanjeevi <sanjeevimani567@email.com>"]
-license = "LICENSE"
+authors = ["Sanjeevi <sanjeevimani567@gmail.com>"]
+license-file = "LICENSE"
 description = "A tool for interacting with AWS IAM services"
 readme = "README.md"
 homepage = "https://sanjuvi.github.io/Blog/posts/Aws-Iam/"
@@ -31,4 +31,5 @@ urldecode = "0.1.1"
 genpdf ="0.2.0"
 printpdf ="0.3.4"
 csv ="1.2.2"
+comfy-table = "7.1.0"
 
