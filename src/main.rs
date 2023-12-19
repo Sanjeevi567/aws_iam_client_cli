@@ -321,19 +321,45 @@ async fn main() {
                                                 None,
                                             )
                                             .await;
-                                    println!("{}\n", "Inline User Policy Names".green().bold());
+                                    // println!("{}\n", "".green().bold());
+                                    let mut policy_table = Table::new();
+                                    policy_table
+                                        .set_header(vec![Cell::new("Inline User Policy Names")
+                                            .fg(Color::Yellow)
+                                            .add_attribute(Attribute::Bold)
+                                            .set_alignment(CellAlignment::Left)])
+                                        .load_preset(UTF8_FULL)
+                                        .set_width(80);
                                     get_available_policy_names.into_iter().for_each(
                                         |policy_name| {
-                                            println!("{}", policy_name.green().bold());
+                                            policy_table.add_row(vec![Cell::new(policy_name)
+                                                .fg(Color::Green)
+                                                .add_attribute(Attribute::Bold)
+                                                .set_alignment(CellAlignment::Center)]);
+                                            // println!("{}", policy_name.green().bold());
                                         },
                                     );
                                     println!("");
-                                    println!("{}\n", "Managed User Policy ARNs".green().bold());
+                                    let mut policy_arn_table = Table::new();
+                                    policy_arn_table
+                                        .set_header(vec![Cell::new("Managed User Policy ARNs")
+                                            .fg(Color::Yellow)
+                                            .add_attribute(Attribute::Bold)
+                                            .set_alignment(CellAlignment::Left)])
+                                        .load_preset(UTF8_FULL)
+                                        .set_width(80);
+                                    // println!("{}\n", "Managed User Policy ARNs".green().bold());
                                     get_available_policy_arns
                                         .into_iter()
                                         .for_each(|policy_arn| {
-                                            println!("{}", policy_arn.green().bold());
+                                            policy_arn_table.add_row(vec![Cell::new(policy_arn)
+                                                .fg(Color::Green)
+                                                .add_attribute(Attribute::Bold)
+                                                .set_alignment(CellAlignment::Center)]);
+                                            //println!("{}", policy_arn.green().bold());
                                         });
+                                    println!("{}",policy_table);
+                                    println!("{}",policy_arn_table);
                                     println!("");
                                     println!("{}\n","The policy names are used as placeholders in the 'Delete User Policy' option".yellow().bold());
                                     println!("{}\n","The policy ARNs are used as placeholders in the 'Detach User Policy' option".yellow().bold());
@@ -1021,23 +1047,50 @@ async fn main() {
                                             &group_name,
                                         )
                                         .await;
-                                    println!(
-                                        "{}\n",
-                                        "Available Inline Group Policies (Names Only)"
-                                            .green()
-                                            .bold()
-                                    );
+                                    let mut group_policy_table = Table::new();
+                                    group_policy_table
+                                        .set_header(vec![Cell::new(
+                                            "List of Available Inline Group Policy Names",
+                                        )
+                                        .fg(Color::Yellow)
+                                        .add_attribute(Attribute::Bold)
+                                        .set_alignment(CellAlignment::Left)])
+                                        .load_preset(UTF8_FULL)
+                                        .set_width(80);
                                     get_available_group_policy_names.into_iter().for_each(
                                         |policy_name| {
-                                            println!("{}", policy_name.green().bold());
+                                            //println!("{}", policy_name.green().bold());
+                                            group_policy_table.add_row(vec![Cell::new(
+                                                policy_name,
+                                            )
+                                            .fg(Color::Green)
+                                            .add_attribute(Attribute::Bold)
+                                            .set_alignment(CellAlignment::Center)]);
                                         },
                                     );
                                     println!("");
+                                    let mut group_policy_arn_table = Table::new();
+                                    group_policy_arn_table
+                                        .set_header(vec![Cell::new(
+                                            "List of Available Managed Group Policy Arns",
+                                        )
+                                        .fg(Color::Yellow)
+                                        .add_attribute(Attribute::Bold)
+                                        .set_alignment(CellAlignment::Left)])
+                                        .load_preset(UTF8_FULL)
+                                        .set_width(80);
                                     get_available_group_policy_arns.into_iter().for_each(
                                         |policy_arn| {
-                                            println!("{}", policy_arn.green().bold());
+                                            group_policy_arn_table.add_row(vec![Cell::new(
+                                                policy_arn,
+                                            )
+                                            .fg(Color::Green)
+                                            .add_attribute(Attribute::Bold)
+                                            .set_alignment(CellAlignment::Center)]);
                                         },
                                     );
+                                    println!("{}",group_policy_table);
+                                    println!("{}",group_policy_arn_table);
                                     println!("");
                                     println!("{}\n","Both of these pieces of information are used as placeholders in the 'Delete Group Policy' and 'Detach Group Policy' options.".yellow().bold());
                                 }
@@ -1497,11 +1550,11 @@ async fn main() {
                 iam_ops.get_account_summary().await;
             }
             "Information about the Application\n" => {
-                println!("{}\n","1) An Easy-to-Use CLI Interface Application for Interacting with AWS IAM Service".bright_green().bold());
-                println!("{}\n","2) If you find this description unclear, please click here https://tinyurl.com/yx5kkssr to learn about supported IAM operations".bright_green().bold());
-                println!("{}\n","3) This application is written in Rust and utilizes the Inquire crate to provide real-world software development experience".bright_green().bold());
-                println!("{}\n","4) This application is not a scam or malware designed to steal your credentials. The complete source code is available here https://github.com/Sanjuvi/aws_iam_client_cli for you to verify its authenticity".bright_green().bold());
-                println!("{}\n","5) If you appreciate this CLI tool or would like to discuss it further, please visit the comments section https://sanjuvi.github.io/Blog/posts/Aws-Iam/".bright_green().bold());
+                println!("{}\n","1) An Easy-to-Use CLI Interface Application for Interacting with AWS IAM Service".bright_yellow().bold());
+                println!("{}{}{}\n","2) If you find this description unclear, please click here".bright_yellow().bold()," https://tinyurl.com/yx5kkssr ".bright_blue().bold(), "to learn about supported IAM operations".bright_yellow().bold());
+                println!("{}\n","3) This application is written in Rust and utilizes the Inquire crate to provide real-world software development experience".bright_yellow().bold());
+                println!("{}{}{}\n","4) This application is not a scam or malware designed to steal your credentials. The complete source code is available here".bright_yellow().bold(), " https://tinyurl.com/abejt5ps ".bright_blue().bold(),"for you to verify its authenticity".bright_yellow().bold());
+                println!("{}{}\n","5) If you appreciate this CLI tool or would like to discuss it further, please visit the comments section".bright_yellow().bold()," https://tinyurl.com/bddz8kbs ".bright_blue().bold());
             }
             "Close the application\n" => break 'main,
             _ => println!("Never Reach"),

@@ -1,12 +1,12 @@
 [package]
 name = "aws_iam_client"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Sanjeevi <sanjeevimani567@gmail.com>"]
 license-file = "LICENSE"
-description = "A tool for interacting with AWS IAM services"
+description = "A user-friendly tool designed for seamless interaction with AWS Identity and Access Management (IAM) services, offering enhanced functionality and expanded options"
 readme = "README.md"
-homepage = "https://sanjuvi.github.io/Blog/posts/Aws-Iam/"
+homepage = "https://sanjeevi.hashnode.dev/if-youre-an-aws-administrator-or-a-power-user-make-sure-to-incorporate-this-invaluable-tool-into-your-toolkit"
 repository = "https://github.com/Sanjuvi/aws_iam_client_cli"
 keywords = ["cli", "aws-sdk-iam", "iam"]
 categories = ["command-line-utilities"]
